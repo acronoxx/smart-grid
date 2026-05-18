@@ -1,4 +1,4 @@
-package fr.imta.smartgrid.server.handlers;
+package fr.imta.smartgrid.server.handler;
 
 import fr.imta.smartgrid.model.Sensor;
 import fr.imta.smartgrid.model.Producer;
