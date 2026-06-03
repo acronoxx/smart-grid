@@ -1,9 +1,9 @@
 package fr.imta.smartgrid.server;
 
-import fr.imta.smartgrid.server.handlers.GridHandler;
-import fr.imta.smartgrid.server.handlers.PersonHandler;
-import fr.imta.smartgrid.server.handlers.SensorHandler;
-import fr.imta.smartgrid.server.handlers.MeasurementHandler;
+import fr.imta.smartgrid.server.handler.GridHandler;
+import fr.imta.smartgrid.server.handler.MeasurementHandler;
+import fr.imta.smartgrid.server.handler.PersonHandler;
+import fr.imta.smartgrid.server.handler.SensorHandler;
 import fr.imta.smartgrid.service.GridService;
 import fr.imta.smartgrid.service.PersonService;
 import fr.imta.smartgrid.service.SensorService;
@@ -23,10 +23,18 @@ import jakarta.persistence.Persistence;
 
 import static org.eclipse.persistence.config.PersistenceUnitProperties.*;
 
+/**
+ * Main Vert.x HTTP server for the SmartGrid API.
+ * Initializes the JPA database connection, creates services and handlers,
+ * and registers all HTTP routes on port 8080.
+ */
 public class VertxServer {
     private Vertx vertx;
     private EntityManager db; // database object
 
+    /**
+     * Initializes the Vert.x instance and the JPA EntityManager.
+     */
     public VertxServer() {
         this.vertx = Vertx.vertx();
 
@@ -39,6 +47,9 @@ public class VertxServer {
         db = emf.createEntityManager();
     }
 
+    /**
+     * Configures the router, registers all routes, and starts the HTTP server on port 8080.
+     */
     public void start() {
         Router router = Router.router(vertx);
 
@@ -99,6 +110,10 @@ public class VertxServer {
             });
     }
 
+    /**
+     * Application entry point. Creates and starts the Vert.x server.
+     * @param args command-line arguments (not used)
+     */
     public static void main(String[] args) {
         new VertxServer().start();
     }

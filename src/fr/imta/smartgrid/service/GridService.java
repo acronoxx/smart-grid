@@ -10,6 +10,10 @@ import java.util.Map;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityNotFoundException;
 
+/**
+ * Business service for CRUD and analytics operations on Grid entities.
+ * Manages JPA transactions and delegates analytics to {@link SensorService}.
+ */
 public class GridService {
     private EntityManager db;
     private SensorService sensorService;
@@ -19,24 +23,26 @@ public class GridService {
         this.sensorService = sensorService;
     }
 
-    // CRUD Operations
+    // ===== CRUD Operations =====
 
+    /**
+     * Creates a new Grid and persists it to the database.
+     * @param name the name of the Grid
+     * @param description the description of the Grid
+     * @param personIds the list of Person IDs to associate
+     * @param sensorIds the list of Sensor IDs to associate
+     * @return the created Grid
+     * @throws IllegalArgumentException if name or description are null
+     * @throws EntityNotFoundException if an associated Person or Sensor does not exist
+     */
     public Grid create(String name, String description, List<Integer> personIds, List<Integer> sensorIds) {
-        // Input validation
         createValidation(name, description, personIds, sensorIds);
-        
         try {
-            // Begin transaction
             db.getTransaction().begin();
-
-            // Create a new Grid and set its data
             Grid g = new Grid();
             applyFields(g, name, description, personIds, sensorIds);
-
-            // Validate the transaction
             db.persist(g);
             db.getTransaction().commit();
-
             return g;
         } 
         catch (Exception e) {
@@ -47,32 +53,44 @@ public class GridService {
         }
     }
 
+    /**
+     * Retrieves all Grids from the database.
+     * @return the list of all Grids
+     */
     public List<Grid> findAll(){
         return db.createQuery("SELECT g FROM Grid g", Grid.class).getResultList();
     }
 
+    /**
+     * Retrieves a Grid by its ID.
+     * @param id the ID of the Grid
+     * @return the matching Grid
+     * @throws IllegalArgumentException if the ID is null
+     * @throws EntityNotFoundException if no Grid matches the given ID
+     */
     public Grid findById(Integer id){
-        // Input Validation
         idValidation(id);
-
-        // Find the Grid
         Grid g = db.find(Grid.class, id);
         if (g == null) throw new EntityNotFoundException("Grid not found");
         return g;
     }
 
+    /**
+     * Updates an existing Grid in the database.
+     * @param id the ID of the Grid to update
+     * @param name the new name
+     * @param description the new description
+     * @param userIds the new list of Person IDs
+     * @param sensorIds the new list of Sensor IDs
+     * @return the updated Grid
+     * @throws EntityNotFoundException if the Grid, an associated Person, or a Sensor does not exist
+     */
     public Grid update(Integer id, String name, String description, List<Integer> userIds, List<Integer> sensorIds){
         try {
-            // Begin transaction
             db.getTransaction().begin();
-
-            // Find the Grid and update its data
             Grid g = findById(id);
             applyFields(g, name, description, userIds, sensorIds);
-
-            // Validate the transaction
             db.getTransaction().commit();
-
             return g;
         } 
         catch (Exception e) {
@@ -83,16 +101,16 @@ public class GridService {
         }
     }
 
+    /**
+     * Deletes a Grid by its ID.
+     * @param id the ID of the Grid to delete
+     * @throws EntityNotFoundException if no Grid matches the given ID
+     */
     public void delete(Integer id){
         try {
-            // Begin transaction
             db.getTransaction().begin();
-
-            // Find the Grid and delete it if exists
             Grid g = findById(id);
             db.remove(g);
-
-            // Validate the transaction
             db.getTransaction().commit();
         } 
         catch (Exception e) {
@@ -103,25 +121,28 @@ public class GridService {
         }
     }
 
-    // Analytic operations
+    // ===== Analytic Operations =====
 
+    /**
+     * Computes the total production of all producer Sensors in the Grid.
+     * @param id the ID of the Grid
+     * @return the total production as a Double
+     * @throws EntityNotFoundException if no Grid matches the given ID
+     */
     public Double computeTotalProduction(Integer id){
         try{
             Grid g = findById(id);
             List<Sensor> sensors = g.getSensors();
             Map<Integer, Double> totalProduction = sensorService.getTotalProduction();
             Double result = 0.0;
-
             for (Map.Entry<Integer, Double> entry : totalProduction.entrySet()) {
                 Integer sensorId = entry.getKey();
                 Sensor sensor = sensorService.findById(sensorId);
                 Double production = entry.getValue();
-
                 if(sensors.contains(sensor)){
                     result = result + production;
                 }
             }
-
             return result;
         }
         catch (Exception e){
@@ -129,6 +150,11 @@ public class GridService {
         }
     }
 
+    /**
+     * Computes the total consumption of all consumer Sensors in the Grid using a JPQL query.
+     * @param id the ID of the Grid
+     * @return the total consumption as a Double, 0.0 if no data
+     */
     public Double computeTotalConsumption(Integer id){
         try{
             String qlString = 
@@ -136,13 +162,9 @@ public class GridService {
                 "WHERE dp.measurement.sensor.id IN (" +
                 "SELECT c.id FROM Consumer c " +
                 "WHERE c.grid.id = :id)";
-
-            Double result = db.createQuery(
-                qlString,
-                Double.class)
+            Double result = db.createQuery(qlString, Double.class)
                 .setParameter("id", id)
                 .getSingleResult();
-
             return result != null ? result : 0.0;
         }
         catch (Exception e){
@@ -150,21 +172,42 @@ public class GridService {
         }
     }
 
-    // Utils
+    // ===== Utils =====
 
+    /**
+     * Validates mandatory fields for Grid creation.
+     * @param name the name to validate
+     * @param description the description to validate
+     * @param personIds the list of Person IDs (not validated here)
+     * @param sensorIds the list of Sensor IDs (not validated here)
+     * @throws IllegalArgumentException if name or description are null
+     */
     private void createValidation(String name, String description, List<Integer> personIds, List<Integer> sensorIds){
         if (name == null) throw new IllegalArgumentException("Missing name"); 
         if (description == null) throw new IllegalArgumentException("Missing description"); 
     }
 
+    /**
+     * Validates that the given ID is not null.
+     * @param id the ID to validate
+     * @throws IllegalArgumentException if the ID is null
+     */
     private void idValidation(Integer id){
         if (id == null) throw new IllegalArgumentException("Missing id");
     }
 
+    /**
+     * Applies the given fields to an existing Grid, including Person and Sensor associations.
+     * @param g the Grid to modify
+     * @param name the name to apply
+     * @param description the description to apply
+     * @param personIds the list of Person IDs to associate
+     * @param sensorIds the list of Sensor IDs to associate
+     * @throws EntityNotFoundException if an associated Person or Sensor does not exist
+     */
     private void applyFields(Grid g, String name, String description, List<Integer> personIds, List<Integer> sensorIds) {
         if (name != null) g.setName(name);
         if (description != null) g.setDescription(description);
-
         if (personIds != null) {
             g.getPersons().clear();
             for (Integer pId : personIds) {
@@ -173,7 +216,6 @@ public class GridService {
                 g.getPersons().add(p);
             }
         }
-
         if (sensorIds != null) {
             g.getSensors().clear();
             for (Integer sId : sensorIds) {
@@ -184,4 +226,3 @@ public class GridService {
         }
     }
 }
-

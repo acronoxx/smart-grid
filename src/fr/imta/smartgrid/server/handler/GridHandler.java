@@ -11,6 +11,11 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import jakarta.persistence.EntityNotFoundException;
 
+/**
+ * HTTP handler for CRUD and analytics operations on Grid entities.
+ * Delegates business logic to {@link GridService}.
+ * Handles errors and returns appropriate HTTP responses.
+ */
 public class GridHandler {
     private GridService gridService;
 
@@ -18,18 +23,22 @@ public class GridHandler {
         this.gridService = gridService;
     }
 
-    // CRUD Operations
+    // ===== CRUD Operations =====
 
+    /**
+     * Creates a new Grid from the JSON data provided in the request body.
+     * Returns 200 with the created Grid ID, 500 on error.
+     * @param ctx the Vert.x routing context containing the request data
+     * @throws IllegalArgumentException if the JSON data is invalid or missing
+     */
     public void create(RoutingContext ctx){
         try{
             JsonObject input = ctx.body().asJsonObject();
-
             String name = getNameFromJSON(input);
             String description = getDescriptionFromJSON(input);
-            List <Integer> personIds = getPersonIdsFromJSON(input);
-            List <Integer> sensorIds = getSensorIdsFromJSON(input);
+            List<Integer> personIds = getPersonIdsFromJSON(input);
+            List<Integer> sensorIds = getSensorIdsFromJSON(input);
             Grid g = gridService.create(name, description, personIds, sensorIds);
-
             ctx.json(g.getId());
         } 
         catch (IllegalArgumentException e) {
@@ -40,15 +49,18 @@ public class GridHandler {
         }
     }
 
+    /**
+     * Retrieves the list of all Grid IDs.
+     * Returns 200 with the list of IDs, 500 on error.
+     * @param ctx the Vert.x routing context
+     */
     public void getGrids(RoutingContext ctx) {
         try{
             List<Grid> grids = gridService.findAll();
-
             List<Integer> gridIds = new ArrayList<>();
             for (Grid g : grids) {
                 gridIds.add(g.getId());
             }
-
             ctx.json(gridIds);
         }
         catch (Exception e){
@@ -56,6 +68,13 @@ public class GridHandler {
         }
     }
 
+    /**
+     * Retrieves a Grid by its ID.
+     * Returns 200 with the Grid as JSON, 404 if not found, 500 on error.
+     * @param ctx the Vert.x routing context containing the path param "id"
+     * @throws IllegalArgumentException if the ID is not a valid integer
+     * @throws EntityNotFoundException if no Grid matches the given ID
+     */
     public void getById(RoutingContext ctx) {
         try {
             Integer id = getIdFromPath(ctx);
@@ -70,17 +89,22 @@ public class GridHandler {
         }
     }
 
+    /**
+     * Updates an existing Grid from the JSON data provided in the request body.
+     * Returns 200 with the updated Grid ID, 404 if not found, 500 on error.
+     * @param ctx the Vert.x routing context containing the path param "id" and request data
+     * @throws IllegalArgumentException if the JSON data is invalid
+     * @throws EntityNotFoundException if no Grid matches the given ID
+     */
     public void update(RoutingContext ctx){
         try {
             Integer id = getIdFromPath(ctx);
-
             JsonObject input = ctx.body().asJsonObject();
             String name = getNameFromJSON(input);
             String description = getDescriptionFromJSON(input);
             List<Integer> personIds = getPersonIdsFromJSON(input);
             List<Integer> sensorIds = getSensorIdsFromJSON(input);
             Grid g = gridService.update(id, name, description, personIds, sensorIds);
-            
             ctx.json(g.getId());
         }
         catch (IllegalArgumentException | EntityNotFoundException e) {
@@ -91,6 +115,12 @@ public class GridHandler {
         }
     }
 
+    /**
+     * Deletes a Grid by its ID.
+     * Returns 200 on success, 404 if not found, 500 on error.
+     * @param ctx the Vert.x routing context containing the path param "id"
+     * @throws EntityNotFoundException if no Grid matches the given ID
+     */
     public void delete(RoutingContext ctx){
         try {
             Integer id = getIdFromPath(ctx);
@@ -105,8 +135,13 @@ public class GridHandler {
         }
     }
 
-    // Analytic operations
+    // ===== Analytics =====
 
+    /**
+     * Computes the total production of the Grid identified by the given ID.
+     * Returns 200 with the value as a Double, 500 on error.
+     * @param ctx the Vert.x routing context containing the path param "id"
+     */
     public void getTotalProduction(RoutingContext ctx) {
         try{
             Integer id = getIdFromPath(ctx);
@@ -118,6 +153,11 @@ public class GridHandler {
         }
     }
 
+    /**
+     * Computes the total consumption of the Grid identified by the given ID.
+     * Returns 200 with the value as a Double, 500 on error.
+     * @param ctx the Vert.x routing context containing the path param "id"
+     */
     public void getTotalConsumption(RoutingContext ctx){
         try{
             Integer id = getIdFromPath(ctx);
@@ -129,20 +169,40 @@ public class GridHandler {
         }
     }
 
-    // Utils
+    // ===== Utils =====
 
+    /**
+     * Extracts the Grid ID from the path param "id".
+     * @param ctx the Vert.x routing context
+     * @return the ID as an Integer
+     */
     private Integer getIdFromPath(RoutingContext ctx){
         return Integer.parseInt(ctx.pathParam("id"));
     }
 
+    /**
+     * Extracts the name from the request JSON.
+     * @param input the request JsonObject
+     * @return the name as a String
+     */
     private String getNameFromJSON(JsonObject input){
         return input.getString("name");
     }
 
+    /**
+     * Extracts the description from the request JSON.
+     * @param input the request JsonObject
+     * @return the description as a String
+     */
     private String getDescriptionFromJSON(JsonObject input){
         return input.getString("description");
     }
 
+    /**
+     * Extracts the list of associated Person IDs from the request JSON.
+     * @param input the request JsonObject
+     * @return the list of Person IDs
+     */
     private List<Integer> getPersonIdsFromJSON(JsonObject input){
         JsonArray persons = input.getJsonArray("users");
         List<Integer> personIds = new ArrayList<>();
@@ -155,6 +215,11 @@ public class GridHandler {
         return personIds;
     }
 
+    /**
+     * Extracts the list of associated Sensor IDs from the request JSON.
+     * @param input the request JsonObject
+     * @return the list of Sensor IDs
+     */
     private List<Integer> getSensorIdsFromJSON(JsonObject input){
         JsonArray sensors = input.getJsonArray("sensors");
         List<Integer> sensorIds = new ArrayList<>();
