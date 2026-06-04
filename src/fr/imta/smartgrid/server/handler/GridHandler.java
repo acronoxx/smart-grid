@@ -105,7 +105,7 @@ public class GridHandler {
             List<Integer> personIds = getPersonIdsFromJSON(input);
             List<Integer> sensorIds = getSensorIdsFromJSON(input);
             Grid g = gridService.update(id, name, description, personIds, sensorIds);
-            ctx.json(g.getId());
+            ctx.json(g);
         }
         catch (IllegalArgumentException | EntityNotFoundException e) {
             ctx.response().setStatusCode(404).end(e.getMessage());

@@ -13,9 +13,7 @@ import fr.imta.smartgrid.model.Measurement;
 import fr.imta.smartgrid.model.DataPoint;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityNotFoundException;
@@ -26,40 +24,9 @@ import jakarta.persistence.EntityNotFoundException;
  */
 public class SensorService {
     private EntityManager db;
-    private Map<Integer, Double> totalProduction = new HashMap<>();
 
     public SensorService(EntityManager db) {
         this.db = db;
-        initializeTotalProduction();
-    }
-
-    /**
-     * Initializes the total production map from existing DataPoints in the database.
-     * Called once at service startup.
-     */
-    public void initializeTotalProduction() {
-        try {
-            List<Producer> producers = db.createQuery("SELECT p FROM Producer p", Producer.class).getResultList();
-            for (Producer p : producers) {
-                Double production = db.createQuery(
-                    "SELECT SUM(dp.value) FROM DataPoint dp " +
-                    "JOIN dp.measurement m " +
-                    "WHERE m.sensor.id = :sensorId AND m.name = 'power'", 
-                    Double.class)
-                    .setParameter("sensorId", p.getId())
-                    .getSingleResult();
-                totalProduction.put(p.getId(), production);
-            }
-        }
-        catch (Exception e){}
-    }
-
-    /**
-     * Returns the total production map (Sensor ID → cumulated production).
-     * @return the total production map
-     */
-    public Map<Integer, Double> getTotalProduction(){
-        return totalProduction;
     }
 
     // ===== CRUD Operations =====
@@ -252,6 +219,7 @@ public class SensorService {
                     measurement = m;
                 }
             }
+
             if (measurement == null){
                 measurement = new Measurement();
                 measurement.setName(name);
@@ -263,14 +231,12 @@ public class SensorService {
                     measurement.setUnit("°C");
                 }
             }
+
             DataPoint datapoint = new DataPoint();
             datapoint.setTimestamp(timestamp);
             datapoint.setValue(value);
             datapoint.setMeasurement(measurement);
             measurement.getDatapoints().add(datapoint);
-            if (name.equals("power")){
-                totalProduction.put(sp.getId(), value * 60 + totalProduction.getOrDefault(sp.getId(), 0.0));
-            }
             db.persist(datapoint);
             db.persist(measurement);
             db.getTransaction().commit();
@@ -388,6 +354,7 @@ public class SensorService {
                     measurement = m;
                 }
             }
+
             if (measurement == null){
                 measurement = new Measurement();
                 measurement.setName(name);
@@ -399,14 +366,12 @@ public class SensorService {
                     measurement.setUnit("kW");
                 }
             }
+
             DataPoint datapoint = new DataPoint();
             datapoint.setTimestamp(timestamp);
             datapoint.setValue(value);
             datapoint.setMeasurement(measurement);
             measurement.getDatapoints().add(datapoint);
-            if (name.equals("power")){
-                totalProduction.put(wt.getId(), value * 60 + totalProduction.getOrDefault(wt.getId(), 0.0));
-            }
             db.persist(datapoint);
             db.persist(measurement);
             db.getTransaction().commit();

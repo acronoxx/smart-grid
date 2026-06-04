@@ -322,10 +322,10 @@ public class SensorHandler {
             JsonObject input = ctx.body().asJsonObject();
             Integer id = input.getInteger("windturbine");
             Long timestamp = input.getLong("timestamp");
-            JsonObject data = input.getJsonObject("data");
-            if (data != null) {
-                for (String name : data.fieldNames()) {
-                    Double value = data.getDouble(name);
+            JsonObject values = input.getJsonObject("data");
+            if (values!= null) {
+                for (String name : values.fieldNames()) {
+                    Double value = values.getDouble(name);
                     sensorService.receiveWindTurbineMeasurement(id, timestamp, name, value);
                 }
             }
@@ -457,7 +457,7 @@ public class SensorHandler {
      * @return the power source as a String
      */
     private String getPowerSourceFromJSON(JsonObject input){
-        return input.getString("powerSource");
+        return input.getString("power_source");
     }
 
     /**
@@ -475,7 +475,7 @@ public class SensorHandler {
      * @return the blade length as a Double
      */
     private Double getBladeLengthFromJSON(JsonObject input){
-        return input.getDouble("bladeLength");
+        return input.getDouble("blade_length");
     }
 
     /**
@@ -493,7 +493,7 @@ public class SensorHandler {
      * @return the maximum power as a Double
      */
     private Double getMaxPowerFromJSON(JsonObject input){
-        return input.getDouble("maxPower");
+        return input.getDouble("max_power");
     }
 
     /**
@@ -520,6 +520,6 @@ public class SensorHandler {
      * @return the connector type as a String
      */
     private String getTypeFromJSON(JsonObject input){
-        return input.getString("connectorType");
+        return input.getString("type");
     }
 }

@@ -61,7 +61,7 @@ public class VertxServer {
         PersonService ps = new PersonService(db);
         SensorService ss = new SensorService(db);
         MeasurementService ms = new MeasurementService(db);
-        GridService gs = new GridService(db,ss);
+        GridService gs = new GridService(db);
 
         // create handlers and registers routes
         GridHandler gh = new GridHandler(gs);

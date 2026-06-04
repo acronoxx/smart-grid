@@ -5,22 +5,18 @@ import fr.imta.smartgrid.model.Person;
 import fr.imta.smartgrid.model.Sensor;
 
 import java.util.List;
-import java.util.Map;
-
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityNotFoundException;
 
 /**
  * Business service for CRUD and analytics operations on Grid entities.
- * Manages JPA transactions and delegates analytics to {@link SensorService}.
  */
 public class GridService {
     private EntityManager db;
-    private SensorService sensorService;
+    
 
-    public GridService(EntityManager db, SensorService sensorService) {
+    public GridService(EntityManager db) {
         this.db = db;
-        this.sensorService = sensorService;
     }
 
     // ===== CRUD Operations =====
@@ -131,19 +127,16 @@ public class GridService {
      */
     public Double computeTotalProduction(Integer id){
         try{
-            Grid g = findById(id);
-            List<Sensor> sensors = g.getSensors();
-            Map<Integer, Double> totalProduction = sensorService.getTotalProduction();
-            Double result = 0.0;
-            for (Map.Entry<Integer, Double> entry : totalProduction.entrySet()) {
-                Integer sensorId = entry.getKey();
-                Sensor sensor = sensorService.findById(sensorId);
-                Double production = entry.getValue();
-                if(sensors.contains(sensor)){
-                    result = result + production;
-                }
-            }
-            return result;
+            findById(id);
+            String qlString = 
+                "SELECT SUM(dp.value) FROM DataPoint dp " +
+                "WHERE dp.measurement.sensor.id IN (" +
+                "SELECT p.id FROM Producer p " +
+                "WHERE p.grid.id = :id) AND dp.measurement.name = 'power'";
+            Double result = db.createQuery(qlString, Double.class)
+                .setParameter("id", id)
+                .getSingleResult();
+            return result != null ? result : 0.0;
         }
         catch (Exception e){
             throw e;
@@ -157,6 +150,7 @@ public class GridService {
      */
     public Double computeTotalConsumption(Integer id){
         try{
+            findById(id);
             String qlString = 
                 "SELECT SUM(dp.value) FROM DataPoint dp " +
                 "WHERE dp.measurement.sensor.id IN (" +

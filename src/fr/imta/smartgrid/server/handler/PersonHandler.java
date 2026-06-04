@@ -186,7 +186,10 @@ public class PersonHandler {
                 Integer sensorId = ownedSensors.getInteger(i);
                 sensorIds.add(sensorId);
             }
+            return sensorIds;
         }
-        return sensorIds;
+        else{
+            return null;
+        }
     }
 }
