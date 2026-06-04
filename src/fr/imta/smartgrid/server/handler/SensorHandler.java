@@ -76,7 +76,7 @@ public class SensorHandler {
                 }
             };
 
-            ctx.json(s.getId());
+            ctx.json(new JsonObject().put("id", s.getId()));
         }
         catch (IllegalArgumentException e) {
             ctx.response().setStatusCode(500).end(e.getMessage());
@@ -430,8 +430,9 @@ public class SensorHandler {
                 Integer personId = persons.getInteger(i);
                 personIds.add(personId);
             }
+            return personIds;
         }
-        return personIds;
+        return null;
     }
 
     /**
@@ -447,8 +448,9 @@ public class SensorHandler {
                 Integer measurementId = measurements.getInteger(i);
                 measurementIds.add(measurementId);
             }
+            return measurementIds;
         }
-        return measurementIds;
+        return null;
     }
 
     /**

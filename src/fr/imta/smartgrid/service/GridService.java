@@ -10,6 +10,8 @@ import jakarta.persistence.EntityNotFoundException;
 
 /**
  * Business service for CRUD and analytics operations on Grid entities.
+ * Manages JPA transactions and Grid-Person-Sensor associations.
+ * Provides methods to compute total production and consumption for a Grid.
  */
 public class GridService {
     private EntityManager db;

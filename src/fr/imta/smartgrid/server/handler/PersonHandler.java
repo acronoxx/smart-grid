@@ -188,8 +188,6 @@ public class PersonHandler {
             }
             return sensorIds;
         }
-        else{
-            return null;
-        }
+        return null;
     }
 }

@@ -60,4 +60,7 @@ There should not be any bugs on our side.
 ## Notes
 All CRUD (Create, Read, Update, Delete) methods have been added for the main classes
 We sticked to the API Routes Details, despite the fact that the HTTP method POST and PUT have been swapped?
+
 Private utility methods have been added to reduce redundancy. Others utility methods have been added to retrieve parameters in the path or JSON, because those methods were redundant and depend on the key that we must define according to the Api Route Details, so we think it is better to put that in a single method so that we can easily change those keys.
+
+Javadoc have been generated in the doc folder.

@@ -39,7 +39,7 @@ public class GridHandler {
             List<Integer> personIds = getPersonIdsFromJSON(input);
             List<Integer> sensorIds = getSensorIdsFromJSON(input);
             Grid g = gridService.create(name, description, personIds, sensorIds);
-            ctx.json(g.getId());
+            ctx.json(new JsonObject().put("id", g.getId()));
         } 
         catch (IllegalArgumentException e) {
             ctx.response().setStatusCode(500).end(e.getMessage());
@@ -105,7 +105,7 @@ public class GridHandler {
             List<Integer> personIds = getPersonIdsFromJSON(input);
             List<Integer> sensorIds = getSensorIdsFromJSON(input);
             Grid g = gridService.update(id, name, description, personIds, sensorIds);
-            ctx.json(g);
+            ctx.json(g.toJSON());
         }
         catch (IllegalArgumentException | EntityNotFoundException e) {
             ctx.response().setStatusCode(404).end(e.getMessage());
@@ -148,6 +148,9 @@ public class GridHandler {
             Double result = gridService.computeTotalProduction(id);
             ctx.json(result);
         }
+        catch (EntityNotFoundException e){
+            ctx.response().setStatusCode(404).end("Grid not found");
+        }
         catch (Exception e){
             ctx.response().setStatusCode(500).end("Error retrieval of grid production");
         }
@@ -163,6 +166,9 @@ public class GridHandler {
             Integer id = getIdFromPath(ctx);
             Double result = gridService.computeTotalConsumption(id);
             ctx.json(result);
+        }
+        catch (EntityNotFoundException e){
+            ctx.response().setStatusCode(404).end("Grid not found");
         }
         catch (Exception e){
             ctx.response().setStatusCode(500).end("Error retrieval of grid consumption");

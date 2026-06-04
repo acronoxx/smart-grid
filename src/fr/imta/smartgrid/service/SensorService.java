@@ -92,7 +92,7 @@ public class SensorService {
     public Sensor findById(Integer id){
         idValidation(id);
         Sensor s = db.find(Sensor.class, id);
-        if (s == null) throw new IllegalArgumentException("Sensor not found");
+        if (s == null) throw new EntityNotFoundException("Sensor not found");
         return s;
     }
 
@@ -211,34 +211,7 @@ public class SensorService {
     public void receiveSolarPanelMeasurement(Integer id, Long timestamp, String name, Double value){
         try {
             db.getTransaction().begin();
-            SolarPanel sp = findSolarPanelById(id);
-            List<Measurement> measurements = sp.getMeasurements();
-            Measurement measurement = null;
-            for (Measurement m : measurements) {
-                if (name.equals(m.getName())){
-                    measurement = m;
-                }
-            }
-
-            if (measurement == null){
-                measurement = new Measurement();
-                measurement.setName(name);
-                measurement.setSensor(sp);
-                if (name.equals("power")){
-                    measurement.setUnit("kW");
-                }
-                else if (name.equals("temperature")){
-                    measurement.setUnit("°C");
-                }
-            }
-
-            DataPoint datapoint = new DataPoint();
-            datapoint.setTimestamp(timestamp);
-            datapoint.setValue(value);
-            datapoint.setMeasurement(measurement);
-            measurement.getDatapoints().add(datapoint);
-            db.persist(datapoint);
-            db.persist(measurement);
+            receiveMeasurement(id, timestamp, name, value);
             db.getTransaction().commit();
         }
         catch (Exception e) {
@@ -346,34 +319,7 @@ public class SensorService {
     public void receiveWindTurbineMeasurement(Integer id, Long timestamp, String name, Double value){
         try {
             db.getTransaction().begin();
-            WindTurbine wt = findWindTurbineById(id);
-            List<Measurement> measurements = wt.getMeasurements();
-            Measurement measurement = null;
-            for (Measurement m : measurements) {
-                if (name.equals(m.getName())){
-                    measurement = m;
-                }
-            }
-
-            if (measurement == null){
-                measurement = new Measurement();
-                measurement.setName(name);
-                measurement.setSensor(wt);
-                if (name.equals("speed")){
-                    measurement.setUnit("m/s");
-                }
-                else if (name.equals("power")){
-                    measurement.setUnit("kW");
-                }
-            }
-
-            DataPoint datapoint = new DataPoint();
-            datapoint.setTimestamp(timestamp);
-            datapoint.setValue(value);
-            datapoint.setMeasurement(measurement);
-            measurement.getDatapoints().add(datapoint);
-            db.persist(datapoint);
-            db.persist(measurement);
+            receiveMeasurement(id, timestamp, name, value);
             db.getTransaction().commit();
         }
         catch (Exception e) {
@@ -647,5 +593,50 @@ public class SensorService {
         if (maxAmp != null) ev.setMaxAmp(maxAmp);
         if (connectorType != null) ev.setType(connectorType);
         if (voltage != null) ev.setVoltage(voltage);
+    }
+
+    /**
+    * Receives a measurement for a Sensor, creates or updates the corresponding Measurement entity, and persists the new DataPoint.
+    * 
+    * If a Measurement with the given name already exists for the Sensor, it adds the new DataPoint to it. Otherwise, it creates a new Measurement and associates it with the Sensor.
+     * The unit of the Measurement is set based on the name of the measurement (e.g., "power" -> "kW", "speed" -> "m/s", "temperature" -> "°C").
+     * @param id the ID of the Sensor sending the measurement
+     * @param timestamp the timestamp of the measurement
+     * @param name the name of the measurement (e.g., "power", "speed", "temperature")
+     * @param value the value of the measurement
+     * @throws EntityNotFoundException if no Sensor matches the given ID
+     */
+    private void receiveMeasurement(Integer id, Long timestamp, String name, Double value){
+        Sensor s = findById(id);
+        List<Measurement> measurements = s.getMeasurements();
+        Measurement measurement = null;
+        for (Measurement m : measurements) {
+            if (name.equals(m.getName())){
+                measurement = m;
+            }
+        }
+
+        if (measurement == null){
+            measurement = new Measurement();
+            measurement.setName(name);
+            measurement.setSensor(s);
+            if (name.equals("speed")){
+                measurement.setUnit("m/s");
+            }
+            else if (name.equals("power")){
+                measurement.setUnit("kW");
+            }
+            else if (name.equals("temperature")){
+                measurement.setUnit("°C");
+            }
+        }
+
+        DataPoint datapoint = new DataPoint();
+        datapoint.setTimestamp(timestamp);
+        datapoint.setValue(value);
+        datapoint.setMeasurement(measurement);
+        measurement.getDatapoints().add(datapoint);
+        db.persist(datapoint);
+        db.persist(measurement);
     }
 }
