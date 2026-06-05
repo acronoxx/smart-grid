@@ -621,14 +621,19 @@ public class SensorService {
             measurement.setName(name);
             measurement.setSensor(s);
             if (name.equals("speed")){
-                measurement.setUnit("m/s");
+                measurement.setUnit("rpm");
             }
             else if (name.equals("power")){
-                measurement.setUnit("kW");
+                measurement.setUnit("W");
             }
             else if (name.equals("temperature")){
-                measurement.setUnit("°C");
+                measurement.setUnit("C°");
             }
+            else if(name.equals("total_energy_produced"))
+            {
+                measurement.setUnit("Wh");
+            }
+            s.getMeasurements().add(measurement);
         }
 
         DataPoint datapoint = new DataPoint();

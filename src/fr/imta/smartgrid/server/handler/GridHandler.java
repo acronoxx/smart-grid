@@ -193,7 +193,6 @@ public class GridHandler {
         }
     }
 
-
     /**
      * Extracts the name from the request JSON.
      * @param input the request JsonObject
