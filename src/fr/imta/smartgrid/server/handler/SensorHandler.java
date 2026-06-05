@@ -212,7 +212,10 @@ public class SensorHandler {
                 throw new IllegalArgumentException("Unknown sensor type");
             }
         }
-        catch (IllegalArgumentException | EntityNotFoundException e){
+        catch (IllegalArgumentException e){
+            ctx.response().setStatusCode(400).end(e.getMessage());
+        }
+        catch (EntityNotFoundException e){
             ctx.response().setStatusCode(404).end(e.getMessage());
         }
         catch (Exception e){
@@ -364,12 +367,19 @@ public class SensorHandler {
     // ===== Utils =====
 
     /**
-     * Extracts the Sensor ID from the path param "id".
+     * Extracts the Grid ID from the path param "id".
      * @param ctx the Vert.x routing context
      * @return the ID as an Integer
+     * @throws IllegalArgumentException if the ID is not a valid integer
      */
     private Integer getIdFromPath(RoutingContext ctx){
-        return Integer.parseInt(ctx.pathParam("id"));
+        try{
+            Integer id = Integer.parseInt(ctx.pathParam("id"));
+            return id;
+        }
+        catch (NumberFormatException e){
+            throw new IllegalArgumentException("Invalid ID format");
+        }
     }
 
     /**

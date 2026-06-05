@@ -52,6 +52,8 @@ The project (fr\imta\smartgrid) is structured in the following way :
 We tried every route on the page that lists all routes to implement. Everything seemed to work fine.
 We also tested every operations on the frontend and everything was working clearly fine.
 
+We've also created automatic tests that covers most of the functionnalities of the project, using a python file (test_api.py) and the libraries in the file requirements.txt, every test was passed.
+But of course, we did not cover every tests because there are quite a lot and we just did the basics.
 
 ## Bugs
 There should not be any bugs on our side.

@@ -17,15 +17,24 @@ BASE_URL = "http://localhost:8080"
 ENTITIES = {
     "person": {
         "create_payload": {"first_name": "Test", "last_name": "User", "grid": 1, "owned_sensors": []},
-        "update_payload": {"first_name": "TestChanged"},
-        "check_field": "first_name",
+        "update_payload": {"last_name": "User Changed"},
+        "check_field": "last_name",
     },
     "grid": {
-        "create_payload": {"name": "Test", "description": "desc"},
-        "update_payload": {"name": "TestChanged"},
+        "create_payload": {"name": "Test Grid", "description": "desc"},
+        "update_payload": {"name": "Test Grid Changed"},
         "check_field": "name",
     },
-    # measurement, sensor...
+    "sensor": {
+        "create_payload": {"name": "Test Sensor", "description" : "desc" , "kind" : "SolarPanel", "grid": 1, "owners": [1,2], "available_measurements": [], "power_source": "solar", "efficiency": 0.2},
+        "update_payload": {"name": "Test Sensor Changed"},
+        "check_field": "name"
+    },
+    "measurement": {
+        "create_payload": {"name": "power", "unit": "kW", "sensor": 1, "datapoints": []},
+        "update_payload": {"name": "powerChanged"},
+        "check_field": "name",
+    }
 }
 
 # Fixtures
@@ -50,7 +59,25 @@ def created_person():
     yield person_id
     requests.delete(f"{BASE_URL}/person/{person_id}")
 
+@pytest.fixture
+def created_sensor():
+    data = ENTITIES["sensor"]["create_payload"]
+    response = requests.put(f"{BASE_URL}/sensor", json=data)
+    assert response.status_code == 200
+    sensor_id = response.json().get("id")
+    assert isinstance(sensor_id, int)
+    yield sensor_id
+    requests.delete(f"{BASE_URL}/sensor/{sensor_id}")
 
+@pytest.fixture
+def created_measurement():
+    data = ENTITIES["measurement"]["create_payload"]
+    response = requests.put(f"{BASE_URL}/measurement", json=data)
+    assert response.status_code == 200
+    measurement_id = response.json().get("id")
+    assert isinstance(measurement_id, int)
+    yield measurement_id
+    requests.delete(f"{BASE_URL}/measurement/{measurement_id}")
 
 # ===== General Tests =====
 

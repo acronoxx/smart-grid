@@ -181,10 +181,18 @@ public class GridHandler {
      * Extracts the Grid ID from the path param "id".
      * @param ctx the Vert.x routing context
      * @return the ID as an Integer
+     * @throws IllegalArgumentException if the ID is not a valid integer
      */
     private Integer getIdFromPath(RoutingContext ctx){
-        return Integer.parseInt(ctx.pathParam("id"));
+        try{
+            Integer id = Integer.parseInt(ctx.pathParam("id"));
+            return id;
+        }
+        catch (NumberFormatException e){
+            throw new IllegalArgumentException("Invalid ID format");
+        }
     }
+
 
     /**
      * Extracts the name from the request JSON.

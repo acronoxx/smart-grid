@@ -128,21 +128,16 @@ public class GridService {
      * @throws EntityNotFoundException if no Grid matches the given ID
      */
     public Double computeTotalProduction(Integer id){
-        try{
-            findById(id);
-            String qlString = 
-                "SELECT SUM(dp.value) FROM DataPoint dp " +
-                "WHERE dp.measurement.sensor.id IN (" +
-                "SELECT p.id FROM Producer p " +
-                "WHERE p.grid.id = :id) AND dp.measurement.name = 'power'";
-            Double result = db.createQuery(qlString, Double.class)
-                .setParameter("id", id)
-                .getSingleResult();
-            return result != null ? result : 0.0;
-        }
-        catch (Exception e){
-            throw e;
-        }
+        findById(id);
+        String qlString = 
+            "SELECT SUM(dp.value) FROM DataPoint dp " +
+            "WHERE dp.measurement.sensor.id IN (" +
+            "SELECT p.id FROM Producer p " +
+            "WHERE p.grid.id = :id) AND dp.measurement.name = 'power'";
+        Double result = db.createQuery(qlString, Double.class)
+            .setParameter("id", id)
+            .getSingleResult();
+        return result != null ? result : 0.0;
     }
 
     /**
@@ -151,21 +146,16 @@ public class GridService {
      * @return the total consumption as a Double, 0.0 if no data
      */
     public Double computeTotalConsumption(Integer id){
-        try{
-            findById(id);
-            String qlString = 
-                "SELECT SUM(dp.value) FROM DataPoint dp " +
-                "WHERE dp.measurement.sensor.id IN (" +
-                "SELECT c.id FROM Consumer c " +
-                "WHERE c.grid.id = :id)";
-            Double result = db.createQuery(qlString, Double.class)
-                .setParameter("id", id)
-                .getSingleResult();
-            return result != null ? result : 0.0;
-        }
-        catch (Exception e){
-            throw e;
-        }
+        findById(id);
+        String qlString = 
+            "SELECT SUM(dp.value) FROM DataPoint dp " +
+            "WHERE dp.measurement.sensor.id IN (" +
+            "SELECT c.id FROM Consumer c " +
+            "WHERE c.grid.id = :id)";
+        Double result = db.createQuery(qlString, Double.class)
+            .setParameter("id", id)
+            .getSingleResult();
+        return result != null ? result : 0.0;
     }
 
     // ===== Utils =====
