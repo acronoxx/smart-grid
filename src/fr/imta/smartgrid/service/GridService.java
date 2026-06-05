@@ -129,11 +129,13 @@ public class GridService {
      */
     public Double computeTotalProduction(Integer id){
         findById(id);
-        String qlString = 
+        String qlString =
             "SELECT SUM(dp.value) FROM DataPoint dp " +
             "WHERE dp.measurement.sensor.id IN (" +
             "SELECT p.id FROM Producer p " +
-            "WHERE p.grid.id = :id) AND dp.measurement.name = 'power'";
+            "WHERE p.grid.id = :id) " +
+            "AND dp.measurement.name = 'total_energy_produced' " +
+            "AND dp.value = (SELECT MAX(dp2.value) FROM DataPoint dp2 WHERE dp2.measurement = dp.measurement)";
         Double result = db.createQuery(qlString, Double.class)
             .setParameter("id", id)
             .getSingleResult();
@@ -147,11 +149,13 @@ public class GridService {
      */
     public Double computeTotalConsumption(Integer id){
         findById(id);
-        String qlString = 
+        String qlString =
             "SELECT SUM(dp.value) FROM DataPoint dp " +
             "WHERE dp.measurement.sensor.id IN (" +
             "SELECT c.id FROM Consumer c " +
-            "WHERE c.grid.id = :id)";
+            "WHERE c.grid.id = :id) " +
+            "AND dp.measurement.name = 'total_energy_consumed' " +
+            "AND dp.value = (SELECT MAX(dp2.value) FROM DataPoint dp2 WHERE dp2.measurement = dp.measurement)";
         Double result = db.createQuery(qlString, Double.class)
             .setParameter("id", id)
             .getSingleResult();
