@@ -643,5 +643,42 @@ public class SensorService {
         measurement.getDatapoints().add(datapoint);
         db.persist(datapoint);
         db.persist(measurement);
+
+        if ("power".equals(name) && s instanceof Producer) {
+            updateTotalEnergyProduced(s, timestamp, value);
+        }
+    }
+
+    private void updateTotalEnergyProduced(Sensor s, Long timestamp, Double powerW) {
+        Measurement totalMeasurement = null;
+        for (Measurement m : s.getMeasurements()) {
+            if ("total_energy_produced".equals(m.getName())) {
+                totalMeasurement = m;
+                break;
+            }
+        }
+        if (totalMeasurement == null) {
+            totalMeasurement = new Measurement();
+            totalMeasurement.setName("total_energy_produced");
+            totalMeasurement.setSensor(s);
+            totalMeasurement.setUnit("Wh");
+            s.getMeasurements().add(totalMeasurement);
+            db.persist(totalMeasurement);
+        }
+
+        Double lastTotal = db.createQuery(
+            "SELECT MAX(dp.value) FROM DataPoint dp WHERE dp.measurement = :m", Double.class)
+            .setParameter("m", totalMeasurement).getSingleResult();
+        if (lastTotal == null) lastTotal = 0.0;
+
+        double newTotal = lastTotal + powerW * 60.0 / 3600.0;
+
+        DataPoint dp = new DataPoint();
+        dp.setTimestamp(timestamp);
+        dp.setValue(newTotal);
+        dp.setMeasurement(totalMeasurement);
+        totalMeasurement.getDatapoints().add(dp);
+        db.persist(dp);
+        db.persist(totalMeasurement);
     }
 }

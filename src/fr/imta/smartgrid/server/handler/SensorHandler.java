@@ -332,7 +332,7 @@ public class SensorHandler {
                     sensorService.receiveWindTurbineMeasurement(id, timestamp, name, value);
                 }
             }
-            ctx.json(new JsonObject().put("status", "success"));
+            ctx.response().setStatusCode(200).end("success");
         }
         catch (IllegalArgumentException | EntityNotFoundException e){
             ctx.response().setStatusCode(404).end(e.getMessage());

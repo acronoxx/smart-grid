@@ -53,11 +53,10 @@ We tried every route on the page that lists all routes to implement. Everything 
 We also tested every operations on the frontend and everything was working clearly fine.
 
 We've also created automatic tests that covers most of the functionnalities of the project, using a python file (test_api.py) and the libraries in the file requirements.txt, every test was passed.
-But of course, we did not cover every tests because there are quite a lot and we just did the basics.
+The basic tests but then expanded with AI to finish faster with every other handlers because it was redundant and we just wanted to see if everything seemed to work well.
 
 ## Bugs
-There should not be any bugs on our side.
-
+There should not be any bugs on our side. Everything that was reported to us should have been treated properly.
 
 ## Notes
 All CRUD (Create, Read, Update, Delete) methods have been added for the main classes
