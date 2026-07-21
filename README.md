@@ -1,5 +1,24 @@
 # SMART GRID PROJECT
-## Groupe : BARET Alexis, BA Marieme, HARINTWARI Irénée
+
+
+## Objective
+
+The goal is to develop software for managing smart energy grids.
+
+The system manages electricity grids at the scale of a city. It also manages the users of a grid, the equipment that produces or consumes electricity within a grid, and time-series measurement data for the equipment (e.g., the instantaneous production/consumption of the equipment in watts).
+
+The system provides services to:
+
+* **Manage an energy grid**: creation and modification of a grid. A grid has a name and a description. It contains a set of users and a set of equipment.
+* **Manage a user**: creation, modification, and deletion of a user. A user has a first name and a last name. They belong to a single grid. A user has access (for management purposes, not yet detailed) to a set of equipment. A piece of equipment can be managed by several users.
+* **Manage a piece of equipment**: there are multiple types of equipment, which will evolve later based on future changes to the specifications. A piece of equipment has a name and a description. A piece of equipment is either a consumer or a producer of electricity. A piece of equipment is attached to only one grid.
+  * A producer has an energy source (wind, sun, hydraulic dam, geothermal, etc.).
+  * A consumer has a maximum instantaneous power consumption in watts.
+  * There is currently only one type of consumer: electric vehicle charging stations. A charging station has a voltage in volts, a maximum current in amperes, and a type (a string).
+  * Current producers are either solar panels or wind turbines.
+    * A solar panel has an efficiency (a real value between 0 and 1).
+    * A wind turbine has the height of its mast and the length of its blades, in meters.
+* **Manage the time-series data of equipment**: each piece of equipment has a set of measurements. A measurement has a name and a unit. Each measurement of a piece of equipment contains a set of time-stamped values. A time-stamped value consists of a real value (the measured value) and a measurement date. (The measured data varies; e.g., instantaneous watts, wind turbine rotation speed, solar panel cell temperature, etc.)
 
 
 ## Structure
@@ -57,6 +76,7 @@ The basic tests but then expanded with AI to finish faster with every other hand
 
 ## Bugs
 There should not be any bugs on our side. Everything that was reported to us should have been treated properly.
+
 
 ## Notes
 All CRUD (Create, Read, Update, Delete) methods have been added for the main classes
