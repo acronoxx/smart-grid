@@ -1,87 +1,164 @@
-# SMART GRID PROJECT
+# Smart Grid
 
+REST backend for managing city-scale smart energy grids, built with **Java**, **Vert.x** and **JPA (EclipseLink) / PostgreSQL**.
 
-## Objective
+The API manages grids, the people attached to them, the equipment that produces or consumes electricity, and the time-series measurements sent by that equipment. Simulated solar panels and wind turbines push live data to the API through dedicated ingress routes.
 
-The goal is to develop software for managing smart energy grids.
+## Domain model
 
-The system manages electricity grids at the scale of a city. It also manages the users of a grid, the equipment that produces or consumes electricity within a grid, and time-series measurement data for the equipment (e.g., the instantaneous production/consumption of the equipment in watts).
+- **Grid**: a name and a description. Holds a set of people and a set of sensors (equipment).
+- **Person**: a first name and a last name. Belongs to exactly one grid and can own several sensors; a sensor can have several owners.
+- **Sensor** (equipment): a name and a description, attached to one grid. A sensor is either:
+  - a **Producer**, with a power source (wind, sun, hydro, geothermal…):
+    - **SolarPanel**: efficiency (between 0 and 1)
+    - **WindTurbine**: mast height and blade length (meters)
+  - a **Consumer**, with a maximum instantaneous power (watts):
+    - **EVCharger**: voltage (V), maximum current (A) and connector type
+- **Measurement**: a name and a unit, attached to one sensor (e.g. power in W, cell temperature in °C).
+- **DataPoint**: a timestamped value belonging to a measurement.
 
-The system provides services to:
+## Tech stack
 
-* **Manage an energy grid**: creation and modification of a grid. A grid has a name and a description. It contains a set of users and a set of equipment.
-* **Manage a user**: creation, modification, and deletion of a user. A user has a first name and a last name. They belong to a single grid. A user has access (for management purposes, not yet detailed) to a set of equipment. A piece of equipment can be managed by several users.
-* **Manage a piece of equipment**: there are multiple types of equipment, which will evolve later based on future changes to the specifications. A piece of equipment has a name and a description. A piece of equipment is either a consumer or a producer of electricity. A piece of equipment is attached to only one grid.
-  * A producer has an energy source (wind, sun, hydraulic dam, geothermal, etc.).
-  * A consumer has a maximum instantaneous power consumption in watts.
-  * There is currently only one type of consumer: electric vehicle charging stations. A charging station has a voltage in volts, a maximum current in amperes, and a type (a string).
-  * Current producers are either solar panels or wind turbines.
-    * A solar panel has an efficiency (a real value between 0 and 1).
-    * A wind turbine has the height of its mast and the length of its blades, in meters.
-* **Manage the time-series data of equipment**: each piece of equipment has a set of measurements. A measurement has a name and a unit. Each measurement of a piece of equipment contains a set of time-stamped values. A time-stamped value consists of a real value (the measured value) and a measurement date. (The measured data varies; e.g., instantaneous watts, wind turbine rotation speed, solar panel cell temperature, etc.)
+- Java 17+, Vert.x 5 (`vertx-core`, `vertx-web`)
+- Jakarta Persistence 3.2 with EclipseLink 4 as the provider
+- PostgreSQL (run through Docker Compose)
+- Python + pytest for the API test suite
 
+Dependencies are bundled as jars in `lib/` (no Maven/Gradle build).
 
-## Structure
-The project (fr\imta\smartgrid) is structured in the following way :
-- model : Contains classes and basic methods (Construcors, Setters, Getters, toJSON)
-- service : Contains SQL requests and complex methods
-- server : Contains handlers to manage HTTP requests, and the server file
+## Project structure
 
+```
+src/fr/imta/smartgrid/
+├── model/            JPA entities (Grid, Person, Sensor and subclasses, Measurement, DataPoint)
+├── service/          database access and business logic
+└── server/
+    ├── VertxServer.java   entry point: database setup, routes, HTTP server on port 8080
+    └── handler/           one HTTP handler per resource
+src/META-INF/persistence.xml   JPA configuration (database URL and credentials)
+lib/                  dependency jars
+doc/                  generated Javadoc (open doc/index.html)
+init_database.sql     schema and seed data loaded into PostgreSQL at startup
+docker-compose.yml    PostgreSQL, Adminer, frontend and sensor simulators
+test_api.py           pytest API test suite
+conftest.py           shared pytest fixtures (test data cleanup, reference values)
+```
 
-## Routes Details
+## Getting started
+
+### 1. Start the database and the companion services
+
+```bash
+docker compose up -d
+```
+
+| Service       | Port | Purpose                                                                         |
+|---------------|------|---------------------------------------------------------------------------------|
+| `db`          | 5432 | PostgreSQL (user `test`, password `test`, database `test`), seeded with `init_database.sql` |
+| `adminer`     | 8081 | Web UI to browse the database                                                   |
+| `front`       | 8082 | Web frontend using the API                                                      |
+| `windturbine` | —    | Simulator posting readings to `/ingress/windturbine` (sensor 2)                 |
+| `solar_panel` | —    | Simulator posting readings to `/ingress/solarpanel` (sensor 1)                  |
+
+The frontend and the simulators reach the API running on the host through `host.docker.internal:8080`.
+
+### 2. Build and run the API
+
+From the project root:
+
+```bash
+javac -cp "lib/*" -d bin $(find src -name "*.java")
+cp -r src/META-INF bin/
+java -cp "bin:lib/*" fr.imta.smartgrid.server.VertxServer
+```
+
+On Windows, use `;` instead of `:` as the classpath separator (`"bin;lib/*"`).
+
+The server listens on `http://localhost:8080`. Database settings are in `src/META-INF/persistence.xml`.
+
+## API
+
+Following the project specification, `PUT` creates a resource and `POST` updates it.
 
 ### Grid
-- PUT `/grid` — Create a new grid
-- GET `/grids` — Get all grid IDs
-- GET `/grid/:id` — Get grid details
-- GET `/grid/:id/production` — Get total energy production of the grid
-- GET `/grid/:id/consumption` — Get total energy consumption of the grid
-- POST `/grid/:id` — Update a grid
-- DELETE `/grid/:id` — Delete a grid
+
+| Method | Route | Description |
+|---|---|---|
+| PUT | `/grid` | Create a grid |
+| GET | `/grids` | List grid IDs |
+| GET | `/grid/:id` | Get a grid |
+| GET | `/grid/:id/production` | Total energy produced by the grid |
+| GET | `/grid/:id/consumption` | Total energy consumed by the grid |
+| POST | `/grid/:id` | Update a grid |
+| DELETE | `/grid/:id` | Delete a grid |
 
 ### Person
-- PUT `/person` — Create a new person
-- GET `/persons` — Get all person IDs
-- GET `/person/:id` — Get person details
-- POST `/person/:id` — Update a person
-- DELETE `/person/:id` — Delete a person
+
+| Method | Route | Description |
+|---|---|---|
+| PUT | `/person` | Create a person |
+| GET | `/persons` | List person IDs |
+| GET | `/person/:id` | Get a person |
+| POST | `/person/:id` | Update a person |
+| DELETE | `/person/:id` | Delete a person |
 
 ### Sensor
-- PUT `/sensor` — Create a new sensor
-- GET `/sensors` — Get all sensor IDs
-- GET `/producers` — Get all producer IDs
-- GET `/consumers` — Get all consumer IDs
-- GET `/sensors/:kind` — Get sensor IDs by kind
-- GET `/sensor/:id` — Get sensor details
-- POST `/ingress/solarpanel` — Receive a solar panel measurement (updates total production)
-- POST `/ingress/windturbine` — Receive a wind turbine measurement (updates total production)
-- POST `/sensor/:id` — Update a sensor
-- DELETE `/sensor/:id` — Delete a sensor
+
+| Method | Route | Description |
+|---|---|---|
+| PUT | `/sensor` | Create a sensor (`kind`: `SolarPanel`, `WindTurbine` or `EVCharger`) |
+| GET | `/sensors` | List sensor IDs |
+| GET | `/sensors/:kind` | List sensor IDs of a given kind |
+| GET | `/producers` | List producer IDs |
+| GET | `/consumers` | List consumer IDs |
+| GET | `/sensor/:id` | Get a sensor |
+| POST | `/sensor/:id` | Update a sensor |
+| DELETE | `/sensor/:id` | Delete a sensor |
+| POST | `/ingress/solarpanel` | Receive a solar panel reading (updates total production) |
+| POST | `/ingress/windturbine` | Receive a wind turbine reading (updates total production) |
 
 ### Measurement
-- PUT `/measurement` — Create a new measurement
-- GET `/measurements` — Get all measurement IDs
-- GET `/measurement/:id` — Get measurement details
-- GET `/measurement/:id/values` — Get measurement datapoints
-- POST `/measurement/:id` — Update a measurement
-- DELETE `/measurement/:id` — Delete a measurement
 
+| Method | Route | Description |
+|---|---|---|
+| PUT | `/measurement` | Create a measurement |
+| GET | `/measurements` | List measurement IDs |
+| GET | `/measurement/:id` | Get a measurement |
+| GET | `/measurement/:id/values` | Get the measurement's datapoints |
+| POST | `/measurement/:id` | Update a measurement |
+| DELETE | `/measurement/:id` | Delete a measurement |
 
-## Tests Details
-We tried every route on the page that lists all routes to implement. Everything seemed to work fine.
-We also tested every operations on the frontend and everything was working clearly fine.
+## Tests
 
-We've also created automatic tests that covers most of the functionnalities of the project, using a python file (test_api.py) and the libraries in the file requirements.txt, every test was passed.
-The basic tests but then expanded with AI to finish faster with every other handlers because it was redundant and we just wanted to see if everything seemed to work well.
+`test_api.py` covers:
 
-## Bugs
-There should not be any bugs on our side. Everything that was reported to us should have been treated properly.
+- CRUD operations on every entity (grid, person, sensor, measurement)
+- error cases: unknown IDs, missing required fields
+- the ingress routes
+- the grid production and consumption totals, checked against values computed directly in the database
 
+With the database and the API running:
 
-## Notes
-All CRUD (Create, Read, Update, Delete) methods have been added for the main classes
-We sticked to the API Routes Details, despite the fact that the HTTP method POST and PUT have been swapped?
+```bash
+pip install -r requirements.txt
+pytest test_api.py
+```
 
-Private utility methods have been added to reduce redundancy. Others utility methods have been added to retrieve parameters in the path or JSON, because those methods were redundant and depend on the key that we must define according to the Api Route Details, so we think it is better to put that in a single method so that we can easily change those keys.
+Before the test session starts, `conftest.py` deletes the datapoints created by previous runs (IDs above the seed data) so the reference totals stay consistent.
 
-Javadoc have been generated in the doc folder.
+All routes were also tested manually through the frontend.
+
+## Design notes
+
+- **Layering**: handlers parse the HTTP request and build the response, services hold the database logic, and models expose a `toJSON()` method used by the handlers.
+- **JSON keys in one place**: each handler reads its path and body parameters through small private helpers (`getNameFromJSON`, …). The keys come from the API specification, so if one changes, it only needs to be updated in one place.
+- **Shared private helpers** in the services avoid duplicating the same queries and checks across CRUD methods.
+- **Inheritance**: `Sensor` → `Producer` / `Consumer` → concrete equipment types, mapped with JPA `JOINED` inheritance: one table per class, joined on the sensor ID.
+
+## Documentation
+
+The Javadoc is generated in `doc/` (open `doc/index.html`). To regenerate it:
+
+```bash
+javadoc -cp "lib/*" -d doc -sourcepath src -subpackages fr.imta.smartgrid
+```
